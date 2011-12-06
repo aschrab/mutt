@@ -1275,6 +1275,12 @@ void mutt_FormatString (char *dest,		/* output buffer */
 	count = 0;
         while (count < sizeof (ifstring) && *src && *src != '?' && *src != '&')
 	{
+	  if (*src == '\\')
+	  {
+	    src++;
+	    if (!*src)
+	      break;
+	  }
           *cp++ = *src++;
 	  count++;
 	}
@@ -1287,7 +1293,13 @@ void mutt_FormatString (char *dest,		/* output buffer */
 	count = 0;
 	while (count < sizeof (elsestring) && *src && *src != '?')
 	{
-	  *cp++ = *src++;
+	  if (*src == '\\')
+	  {
+	    src++;
+	    if (!*src)
+	      break;
+	  }
+          *cp++ = *src++;
 	  count++;
 	}
 	*cp = 0;
