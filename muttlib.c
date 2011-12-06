@@ -1335,7 +1335,16 @@ void mutt_FormatString (char *dest,		/* output buffer */
       if (*src == '?')
       {
 	flags |= MUTT_FORMAT_OPTIONAL;
-	src++;
+	ch = *(++src); /* save the character to switch on */
+	cp = prefix;
+	++src;
+	count = 0;
+	while (count < sizeof (prefix) && *src != '?')
+	{
+	  *cp++ = *src++;
+	  count++;
+	}
+	*cp = 0;
       }
       else
       {
@@ -1351,12 +1360,12 @@ void mutt_FormatString (char *dest,		/* output buffer */
 	  count++;
 	}
 	*cp = 0;
+
+	if (!*src)
+	  break; /* bad format */
+
+	ch = *src++; /* save the character to switch on */
       }
-
-      if (!*src)
-	break; /* bad format */
-
-      ch = *src++; /* save the character to switch on */
 
       if (flags & MUTT_FORMAT_OPTIONAL)
       {
