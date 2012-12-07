@@ -334,6 +334,7 @@ const struct binding_t OpCompose[] = { /* map: compose */
   { "attach-message",	OP_COMPOSE_ATTACH_MESSAGE,	"A" },
   { "edit-bcc",		OP_COMPOSE_EDIT_BCC,		"b" },
   { "edit-cc",		OP_COMPOSE_EDIT_CC,		"c" },
+  { "change-reply-type",	OP_COMPOSE_CHANGE_REPLY_TYPE,	"\022" },
   { "copy-file",	OP_SAVE,			"C" },
   { "detach-file",	OP_DELETE,			"D" },
   { "toggle-disposition",OP_COMPOSE_TOGGLE_DISPOSITION,	"\004" },
