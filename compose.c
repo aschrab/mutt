@@ -205,6 +205,68 @@ static void redraw_mix_line (LIST *chain)
 #endif /* MIXMASTER */
 
 static int
+mutt_change_reply_type(HEADER *msg)
+{
+  char buf[HUGE_STRING] = ""; /* needs to be large for alias expansion */
+  HEADER *parent;
+  ENVELOPE e;
+  int flags = 0;
+
+  memset(&e, 0, sizeof(e));
+
+  if (msg->thread && msg->thread->parent)
+    parent = msg->thread->parent->message;
+
+  if (!parent) {
+    mutt_error _("Parent message not found");
+    return 0;
+  }
+
+  switch (mutt_multi_choice(_("Reply type (s)ender/(g)roup/(l)ist?:"), _("sgl")))
+  {
+    case -1: /* abort */
+      return 0;
+    case 1: /* sender */
+      break;
+    case 2: /* group */
+      flags = SENDGROUPREPLY;
+      break;
+    case 3: /* list */
+      flags = SENDLISTREPLY;
+      break;
+  }
+
+  mutt_fetch_recips(&e, parent->env, flags);
+  mutt_fix_reply_recipients (&e);
+
+  /* Free the old address lists, replace with the new ones */
+  rfc822_free_address(&msg->env->to);
+  rfc822_free_address(&msg->env->cc);
+  rfc822_free_address(&msg->env->bcc);
+  msg->env->to = e.to;
+  msg->env->cc = e.cc;
+  msg->env->bcc = e.bcc;
+
+  /* Redraw the recipient lists in the compose menu */
+  buf[0] = 0;
+  rfc822_write_address (buf, sizeof(buf), msg->env->to, 1);
+  move (HDR_TO, HDR_XOFFSET);
+  mutt_paddstr (W, buf);
+
+  buf[0] = 0;
+  rfc822_write_address (buf, sizeof(buf), msg->env->cc, 1);
+  move (HDR_CC, HDR_XOFFSET);
+  mutt_paddstr (W, buf);
+
+  buf[0] = 0;
+  rfc822_write_address (buf, sizeof(buf), msg->env->bcc, 1);
+  move (HDR_BCC, HDR_XOFFSET);
+  mutt_paddstr (W, buf);
+
+  return 1;
+}
+
+static int
 check_attachments(ATTACHPTR **idx, short idxlen)
 {
   int i, r;
@@ -558,6 +620,10 @@ int mutt_compose_menu (HEADER *msg,   /* structure for new message */
 	}
         mutt_message_hook (NULL, msg, MUTT_SEND2HOOK);	
         break;
+      case OP_COMPOSE_CHANGE_REPLY_TYPE:
+	if (mutt_change_reply_type (msg))
+	  mutt_message_hook (NULL, msg, MUTT_SEND2HOOK);
+	break;
       case OP_COMPOSE_EDIT_SUBJECT:
 	if (msg->env->subject)
 	  strfcpy (buf, msg->env->subject, sizeof (buf));
