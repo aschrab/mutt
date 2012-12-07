@@ -1201,6 +1201,11 @@ ci_send_message (int flags,		/* send mode */
       msg->env = mutt_new_envelope ();
   }
 
+  if (cur) {
+    msg->thread = (THREAD *) safe_malloc (sizeof (THREAD));
+    msg->thread->parent = cur->thread;
+  }
+
   /* Parse and use an eventual list-post header */
   if ((flags & SENDLISTREPLY) 
       && cur && cur->env && cur->env->list_post) 
@@ -1928,6 +1933,7 @@ cleanup:
   }
    
   safe_fclose (&tempfp);
+  FREE (&msg->thread);
   if (! (flags & SENDNOFREEHEADER))
     mutt_free_header (&msg);
   
