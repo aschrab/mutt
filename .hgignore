@@ -34,6 +34,7 @@
 ^smime_keys$
 ^txt2c$
 ^stamp-doc-rc$
+^version\.h$
 ^doc/instdoc$
 ^doc/manual\.(txt|xml|aux|log|out|tex|pdf)$
 ^doc/mutt\.1$
