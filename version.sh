@@ -66,6 +66,17 @@ if [ -d .hg ] && $HG >/dev/null 2>&1; then
 	exit 0
 fi
 
+# If git is present and in a git repo use that to build detailed version string
+if git rev-parse 2> /dev/null; then
+	# Transform string like "mutt-1-6-1-rel-108-g2415feb+" into "1.6.1+108 (g2415feb+)"
+	git describe --long --tags --match 'mutt-*-rel' --dirty=+ | sed \
+		-e 's/mutt-//' \
+		-e 's/-rel-\([0-9]*\)/+\1/' \
+		-e 's/-\(g.*\)/ (\1)/' \
+		-e 's/-/./g'
+	exit 0
+fi
+
 # If nothing else worked, just cat the VERSION file;
 # it contains the latest release number.
 cat VERSION
