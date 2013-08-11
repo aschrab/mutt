@@ -6058,6 +6058,7 @@ entire subject, not just the match!
 <para>
 <literal>unsubjectrx</literal> removes a given subjectrx from the substitution
 list.
+If <literal>*</literal> is used as the pattern, all substitutions will be removed.
 </para>
 
 <example id="ex-subjectrx">
