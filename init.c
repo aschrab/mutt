@@ -543,6 +543,18 @@ static int remove_from_replace_list (REPLACE_LIST **list, const char *pat)
   cur = *list;
   if (!cur)
     return 0;
+
+  if (!mutt_strcmp(pat, "*"))
+  {
+    while (cur) {
+      *list = cur->next;
+      mutt_free_regexp(&cur->rx);
+      FREE(&cur->template);
+      FREE(&cur);
+    }
+    return 0;
+  }
+
   if (cur->rx && !mutt_strcmp(cur->rx->pattern, pat))
   {
     *list = cur->next;
