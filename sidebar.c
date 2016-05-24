@@ -82,6 +82,7 @@ static const char *cb_format_str(char *dest, size_t destlen, size_t col, int col
   SBENTRY *sbe = (SBENTRY *) data;
   unsigned int optional;
   char fmt[STRING];
+  char box[STRING];
 
   if (!sbe || !dest)
     return src;
@@ -99,7 +100,9 @@ static const char *cb_format_str(char *dest, size_t destlen, size_t col, int col
   switch (op)
   {
     case 'B':
-      mutt_format_s (dest, destlen, prefix, sbe->box);
+      strfcpy (box, sbe->box, sizeof (box));
+      mutt_pretty_mailbox(box, sizeof(box));
+      mutt_format_s (dest, destlen, prefix, box);
       break;
 
     case 'd':

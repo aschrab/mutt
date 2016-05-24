@@ -797,6 +797,39 @@ static int parse_unlist (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err
   return 0;
 }
 
+static int mutt_parse_mailbox_prefix (BUFFER *b, BUFFER *s, unsigned long data, BUFFER *err)
+{
+  mailbox_prefix_t *mb_prefix, *prev;
+
+  mb_prefix = safe_malloc(sizeof(*mb_prefix));
+  mb_prefix->next = NULL;
+
+  mutt_extract_token (b, s, 0);
+  mb_prefix->shortcut = safe_malloc(b->dsize);
+  strfcpy(mb_prefix->shortcut, b->data, b->dsize);
+
+  mutt_extract_token (b, s, 0);
+  mb_prefix->prefix = safe_malloc(b->dsize);
+  strfcpy(mb_prefix->prefix, b->data, b->dsize);
+
+  if (MailboxPrefixList) {
+    prev = MailboxPrefixList;
+    while (prev->next) {
+      prev = prev->next;
+    }
+    prev->next = mb_prefix;
+  }
+  else
+    MailboxPrefixList = mb_prefix;
+
+  return 0;
+bail:
+  FREE(&mb_prefix->shortcut);
+  FREE(&mb_prefix->prefix);
+  FREE(&mb_prefix);
+  return -1;
+}
+
 static int parse_lists (BUFFER *buf, BUFFER *s, unsigned long data, BUFFER *err)
 {
   group_context_t *gc = NULL;
