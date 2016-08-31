@@ -830,10 +830,24 @@ void mutt_free_alias (ALIAS **p)
   }
 }
 
-/* collapse the pathname using ~ or = when possible */
-void mutt_pretty_mailbox (char *s, size_t buflen)
+static void apply_mailboxrx (char *s, size_t buflen)
 {
-  char *p = s, *q = s;
+  char *repl;
+
+  repl = mutt_apply_replace (NULL, 0, s, MailboxRxList);
+  if (repl)
+  {
+    strncpy(s, repl, buflen-1);
+    s[buflen-1] = '\0';
+    FREE(&repl);
+  }
+}
+
+/* collapse the pathname using ~ or = when possible */
+void mutt_pretty_mailbox (char *buf, size_t buflen)
+{
+  char *s = buf;
+  char *p = buf, *q = buf;
   size_t len;
   url_scheme_t scheme;
   char tmp[PATH_MAX];
@@ -844,6 +858,7 @@ void mutt_pretty_mailbox (char *s, size_t buflen)
   if (scheme == U_IMAP || scheme == U_IMAPS)
   {
     imap_pretty_mailbox (s);
+    apply_mailboxrx (buf, buflen);
     return;
   }
 #endif
@@ -899,6 +914,8 @@ void mutt_pretty_mailbox (char *s, size_t buflen)
     *s++ = '~';
     memmove (s, s + len - 1, mutt_strlen (s + len - 1) + 1);
   }
+
+  apply_mailboxrx (buf, buflen);
 }
 
 void mutt_pretty_size (char *s, size_t len, LOFF_T n)

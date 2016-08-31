@@ -6119,6 +6119,41 @@ subjectrx '\[[^\]]*\]:? *' '%L%R'
 </screen>
 </example>
 
+<para>
+Similarly, <literal>mailboxrx</literal> lets you replace mailbox names in the
+display, which can be useful if they are very long -- for example, mailboxes
+deep in your filesystem, or IMAP URLs with a lot of prefatory junk.
+</para>
+
+<cmdsynopsis>
+<command>mailboxrx</command>
+<arg choice="plain">
+<replaceable class="parameter">pattern</replaceable>
+</arg>
+<arg choice="plain">
+<replaceable class="parameter">replacement</replaceable>
+</arg>
+
+<command>unmailboxrx</command>
+<arg choice="plain">
+<replaceable class="parameter">pattern</replaceable>
+</arg>
+</cmdsynopsis>
+
+<example id="ex-mailboxrx">
+<title>Mailbox Munging</title>
+<screen>
+# Shorten my home directory path
+mailboxrx '/home/dgc' '~/%R'
+
+# Shorten my Mail folder
+mailboxrx '/home/dgc/[mM]ail/' '=%R'
+
+# Shorten IMAP
+mailboxrx 'imaps?://[^/]*/' 'imap:%R'
+</screen>
+</example>
+
 </sect1>
 
 <sect1 id="new-mail">
