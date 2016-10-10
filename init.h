@@ -3866,6 +3866,7 @@ static int parse_subscribe (BUFFER *, BUFFER *, unsigned long, BUFFER *);
 static int parse_unsubscribe (BUFFER *, BUFFER *, unsigned long, BUFFER *);
 static int parse_attachments (BUFFER *, BUFFER *, unsigned long, BUFFER *);
 static int parse_unattachments (BUFFER *, BUFFER *, unsigned long, BUFFER *);
+static int mutt_parse_mailbox_prefix (BUFFER *, BUFFER *, unsigned long, BUFFER *);
 
 
 static int parse_alternates (BUFFER *, BUFFER *, unsigned long, BUFFER *);
@@ -3912,6 +3913,7 @@ const struct command_t Commands[] = {
   { "ignore",		parse_ignore,		0 },
   { "lists",		parse_lists,		0 },
   { "macro",		mutt_parse_macro,	0 },
+  { "mailbox_prefix",	mutt_parse_mailbox_prefix, 0 },
   { "mailboxes",	mutt_parse_mailboxes,	MUTT_MAILBOXES },
   { "unmailboxes",	mutt_parse_mailboxes,	MUTT_UNMAILBOXES },
   { "mailto_allow",	parse_list,		UL &MailtoAllow },
