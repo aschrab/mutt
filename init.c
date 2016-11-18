@@ -919,7 +919,7 @@ static int mutt_parse_mailbox_prefix (BUFFER *b, BUFFER *s, unsigned long data, 
     MailboxPrefixList = mb_prefix;
 
   return 0;
-bail:
+
   FREE(&mb_prefix->shortcut);
   FREE(&mb_prefix->prefix);
   FREE(&mb_prefix);
