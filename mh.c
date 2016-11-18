@@ -696,8 +696,11 @@ static void maildir_parse_flags (HEADER * h, const char *path)
 	break;
 
       case 'T':		/* trashed */
-	h->trash = 1;
-	h->deleted = 1;
+	if (!h->flagged || !option(OPTFLAGSAFE))
+	{
+	  h->trash = 1;
+	  h->deleted = 1;
+	}
 	break;
       
       default:
@@ -2536,6 +2539,7 @@ struct mx_ops mx_maildir_ops = {
   .commit_msg = maildir_commit_message,
   .open_new_msg = maildir_open_new_message,
   .check = maildir_check_mailbox,
+  .sync = mh_sync_mailbox,
 };
 
 struct mx_ops mx_mh_ops = {
@@ -2547,4 +2551,5 @@ struct mx_ops mx_mh_ops = {
   .commit_msg = mh_commit_message,
   .open_new_msg = mh_open_new_message,
   .check = mh_check_mailbox,
+  .sync = mh_sync_mailbox,
 };

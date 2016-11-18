@@ -225,6 +225,7 @@ struct option_t MuttVars[] = {
   ** .dt %D  .dd deleted flag
   ** .dt %d  .dd description
   ** .dt %e  .dd MIME content-transfer-encoding
+  ** .dt %F  .dd filename for content-disposition header
   ** .dt %f  .dd filename
   ** .dt %I  .dd disposition (``I'' for inline, ``A'' for attachment)
   ** .dt %m  .dd major MIME type
@@ -797,6 +798,11 @@ struct option_t MuttVars[] = {
   ** unsigned, even when the actual message is encrypted and/or
   ** signed.
   ** (PGP only)
+  */
+  { "flag_safe", DT_BOOL, R_NONE, OPTFLAGSAFE, 0 },
+  /*
+  ** .pp
+  ** If set, flagged messages cannot be deleted.
   */
   { "folder",		DT_PATH, R_NONE, UL &Maildir, UL "~/Mail" },
   /*
@@ -1483,6 +1489,13 @@ struct option_t MuttVars[] = {
   ** messages to the cur directory.  Note that setting this option may
   ** slow down polling for new messages in large folders, since mutt has
   ** to scan all cur messages.
+  */
+  { "mark_macro_prefix",DT_STR, R_NONE, UL &MarkMacroPrefix, UL "'" },
+  /*
+  ** .pp
+  ** Prefix for macros created using mark-message.  A new macro
+  ** automatically generated with \fI<mark-message>a\fP will be composed
+  ** from this prefix and the letter \fIa\fP.
   */
   { "mark_old",		DT_BOOL, R_BOTH, OPTMARKOLD, 1 },
   /*
@@ -2673,7 +2686,10 @@ struct option_t MuttVars[] = {
   ** .pp
   ** Specifies the program and arguments used to deliver mail sent by Mutt.
   ** Mutt expects that the specified program interprets additional
-  ** arguments as recipient addresses.
+  ** arguments as recipient addresses.  Mutt appends all recipients after
+  ** adding a \fC--\fP delimiter (if not already present).  Additional
+  ** flags, such as for $$use_8bitmime, $$use_envelope_from,
+  ** $$dsn_notify, or $$dsn_return will be added before the delimiter.
   */
   { "sendmail_wait",	DT_NUM,  R_NONE, UL &SendmailWait, 0 },
   /*
@@ -3909,6 +3925,11 @@ const struct command_t Commands[] = {
   { "fcc-hook",		mutt_parse_hook,	MUTT_FCCHOOK },
   { "fcc-save-hook",	mutt_parse_hook,	MUTT_FCCHOOK | MUTT_SAVEHOOK },
   { "folder-hook",	mutt_parse_hook,	MUTT_FOLDERHOOK },
+#ifdef USE_COMPRESSED
+  { "open-hook",	mutt_parse_hook,	MUTT_OPENHOOK },
+  { "close-hook",	mutt_parse_hook,	MUTT_CLOSEHOOK },
+  { "append-hook",	mutt_parse_hook,	MUTT_APPENDHOOK },
+#endif
   { "group",		parse_group,		MUTT_GROUP },
   { "ungroup",		parse_group,		MUTT_UNGROUP },
   { "hdr_order",	parse_list,		UL &HeaderOrderList },

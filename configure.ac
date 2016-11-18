@@ -180,6 +180,15 @@ AC_ARG_ENABLE(sidebar, AC_HELP_STRING([--enable-sidebar], [Enable Sidebar suppor
         fi
 ])
 
+AC_ARG_ENABLE(compressed, AC_HELP_STRING([--enable-compressed], [Enable compressed folders support]),
+              enable_compressed=$enableval, enable_compressed=no
+)
+AS_IF([test x$enable_compressed = "xyes"], [
+	   AC_DEFINE(USE_COMPRESSED, 1, [Define to enable compressed folders support.])
+	   MUTT_LIB_OBJECTS="$MUTT_LIB_OBJECTS compress.o"
+])
+AM_CONDITIONAL(BUILD_COMPRESS, test x$enable_compressed = xyes)
+
 AC_ARG_WITH(mixmaster, AS_HELP_STRING([--with-mixmaster@<:@=PATH@:>@],[Include Mixmaster support]),
   [if test "$withval" != no
    then
@@ -270,7 +279,7 @@ main ()
 
         [mutt_cv_curses=/usr
         AC_ARG_WITH(curses, AS_HELP_STRING([--with-curses=DIR],[Where ncurses is installed]),
-                [if test $withval != yes; then
+                [if test x$withval != xyes; then
                         mutt_cv_curses=$withval
                 fi
                 if test x$mutt_cv_curses != x/usr; then
@@ -290,8 +299,9 @@ main ()
                 AC_CHECK_LIB(tinfo, tgetent, [MUTTLIBS="$MUTTLIBS -ltinfo"])
 
                 if test "$cf_ncurses" = ncursesw; then
-			AC_CHECK_HEADERS(ncursesw/ncurses.h,[cf_cv_ncurses_header="ncursesw/ncurses.h"])
-		else
+                  AC_CHECK_HEADERS(ncursesw/ncurses.h,[cf_cv_ncurses_header="ncursesw/ncurses.h"],
+                    [AC_CHECK_HEADERS(ncurses.h,[cf_cv_ncurses_header="ncurses.h"])])
+                else
                   AC_CHECK_HEADERS(ncurses/ncurses.h,[cf_cv_ncurses_header="ncurses/ncurses.h"],
                     [AC_CHECK_HEADERS(ncurses.h,[cf_cv_ncurses_header="ncurses.h"])])
 		fi],
@@ -1343,6 +1353,13 @@ then
   fi
 fi
 AC_SUBST(DSLROOT)
+
+AC_ARG_ENABLE(doc, AS_HELP_STRING([--disable-doc],[Do not build the documentation]),
+[       if test x$enableval = xno ; then
+                do_build_doc=no
+        fi
+])
+AM_CONDITIONAL(BUILD_DOC, test x$do_build_doc != xno)
 
 AC_ARG_ENABLE(full_doc,
 	      AS_HELP_STRING([--disable-full-doc],[Omit disabled variables]),
