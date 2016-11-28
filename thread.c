@@ -369,20 +369,20 @@ static LIST *make_subject_list (THREAD *cur, time_t *dateptr)
     }
 
     env = cur->message->env;
-    if (env->real_subj &&
-	((env->real_subj != env->subject) || (!option (OPTSORTRE))))
+    if (env->disp_subj &&
+	((env->disp_subj != env->subject) || (!option (OPTSORTRE))))
     {
       for (curlist = subjects, oldlist = NULL;
 	   curlist; oldlist = curlist, curlist = curlist->next)
       {
-	rc = mutt_strcmp (env->real_subj, curlist->data);
+	rc = mutt_strcmp (env->disp_subj, curlist->data);
 	if (rc >= 0)
 	  break;
       }
       if (!curlist || rc > 0)
       {
 	newlist = safe_calloc (1, sizeof (LIST));
-	newlist->data = env->real_subj;
+	newlist->data = env->disp_subj;
 	if (oldlist)
 	{
 	  newlist->next = oldlist->next;
@@ -440,8 +440,8 @@ static THREAD *find_subject (CONTEXT *ctx, THREAD *cur)
 	   (option (OPTTHREADRECEIVED) ?
 	    (last->message->received < tmp->message->received) :
 	    (last->message->date_sent < tmp->message->date_sent))) &&
-	  tmp->message->env->real_subj &&
-	  mutt_strcmp (subjects->data, tmp->message->env->real_subj) == 0)
+	  tmp->message->env->disp_subj &&
+	  mutt_strcmp (subjects->data, tmp->message->env->disp_subj) == 0)
 	last = tmp; /* best match so far */
     }
 
@@ -518,8 +518,8 @@ static void pseudo_threads (CONTEXT *ctx)
 	 * parent, since otherwise they rightly belong to the message
 	 * we're attaching. */
 	if (tmp == cur
-	    || !mutt_strcmp (tmp->message->env->real_subj,
-			     parent->message->env->real_subj))
+	    || !mutt_strcmp (tmp->message->env->disp_subj,
+			     parent->message->env->disp_subj))
 	{
 	  tmp->message->subject_changed = 0;
 
@@ -738,12 +738,12 @@ static void check_subjects (CONTEXT *ctx, int init)
 
     if (!tmp)
       cur->subject_changed = 1;
-    else if (cur->env->real_subj && tmp->message->env->real_subj)
-      cur->subject_changed = mutt_strcmp (cur->env->real_subj,
-					  tmp->message->env->real_subj) ? 1 : 0;
+    else if (cur->env->disp_subj && tmp->message->env->disp_subj)
+      cur->subject_changed = mutt_strcmp (cur->env->disp_subj,
+					  tmp->message->env->disp_subj) ? 1 : 0;
     else
-      cur->subject_changed = (cur->env->real_subj
-			      || tmp->message->env->real_subj) ? 1 : 0;
+      cur->subject_changed = (cur->env->disp_subj
+			      || tmp->message->env->disp_subj) ? 1 : 0;
   }
 }
 
@@ -1357,8 +1357,8 @@ HASH *mutt_make_subj_hash (CONTEXT *ctx)
   for (i = 0; i < ctx->msgcount; i++)
   {
     hdr = ctx->hdrs[i];
-    if (hdr->env->real_subj)
-      hash_insert (hash, hdr->env->real_subj, hdr, 1);
+    if (hdr->env->disp_subj)
+      hash_insert (hash, hdr->env->disp_subj, hdr, 1);
   }
 
   return hash;

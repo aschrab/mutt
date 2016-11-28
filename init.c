@@ -774,6 +774,7 @@ static void clear_subject_mods (void)
     for (i = 0; i < Context->msgcount; i++)
       FREE(&Context->hdrs[i]->env->disp_subj);
   }
+  set_option (OPTREDRAWTREE);
 }
 
 
