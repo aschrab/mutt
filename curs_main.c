@@ -474,7 +474,7 @@ static void resort_index (MUTTMENU *menu)
   }
 
   if ((Sort & SORT_MASK) == SORT_THREADS && menu->current < 0)
-    menu->current = mutt_parent_message (Context, current);
+    menu->current = mutt_parent_message (Context, current, 0);
 
   if (menu->current < 0)
     menu->current = ci_first_message ();
@@ -831,7 +831,14 @@ int mutt_index_menu (void)
 	buf[0] = 0;
 	if (mutt_get_field (_("Jump to message: "), buf, sizeof (buf), 0) != 0
 	    || !buf[0])
+        {
+          if (menu->menu == MENU_PAGER)
+          {
+            op = OP_DISPLAY_MESSAGE;
+            continue;
+          }
 	  break;
+        }
 
 	if (mutt_atoi (buf, &i) < 0)
 	{
@@ -1241,6 +1248,11 @@ int mutt_index_menu (void)
         {
 	  int check;
 
+#ifdef USE_COMPRESSED
+	  if (Context->compress_info && Context->realpath)
+	    mutt_str_replace (&LastFolder, Context->realpath);
+	  else
+#endif
 	  mutt_str_replace (&LastFolder, Context->path);
 	  oldcount = Context ? Context->msgcount : 0;
 
@@ -1791,12 +1803,14 @@ int mutt_index_menu (void)
 	  menu->redraw = REDRAW_MOTION;
 	break;
 
+      case OP_MAIN_ROOT_MESSAGE:
       case OP_MAIN_PARENT_MESSAGE:
 
 	CHECK_MSGCOUNT;
         CHECK_VISIBLE;
 
-	if ((menu->current = mutt_parent_message (Context, CURHDR)) < 0)
+	if ((menu->current = mutt_parent_message (Context, CURHDR,
+                                                  op == OP_MAIN_ROOT_MESSAGE)) < 0)
 	{
 	  menu->current = menu->oldcurrent;
 	}
@@ -2195,6 +2209,44 @@ int mutt_index_menu (void)
 	  }
 	  menu->redraw = REDRAW_INDEX | REDRAW_STATUS;
 	}
+	break;
+
+
+      case OP_MARK_MSG:
+
+	CHECK_MSGCOUNT;
+	CHECK_VISIBLE;
+	if (CURHDR->env->message_id)
+	{
+	  char str[STRING], macro[STRING];
+	  char buf[128];
+
+	  buf[0] = '\0';
+          /* L10N: This is the prompt for <mark-message>.  Whatever they
+             enter will be prefixed by $mark_macro_prefix and will become
+             a macro hotkey to jump to the currently selected message. */
+	  if (!mutt_get_field (_("Enter macro stroke: "), buf, sizeof(buf),
+	  		       MUTT_CLEAR) && buf[0])
+	  {
+	    snprintf(str, sizeof(str), "%s%s", MarkMacroPrefix, buf);
+	    snprintf(macro, sizeof(macro),
+		     "<search>~i \"%s\"\n", CURHDR->env->message_id);
+            /* L10N: "message hotkey" is the key bindings menu description of a
+               macro created by <mark-message>. */
+	    km_bind(str, MENU_MAIN, OP_MACRO, macro, _("message hotkey"));
+
+            /* L10N: This is echoed after <mark-message> creates a new hotkey
+               macro.  %s is the hotkey string ($mark_macro_prefix followed
+               by whatever they typed at the prompt.) */
+	    snprintf(buf, sizeof(buf), _("Message bound to %s."), str);
+	    mutt_message(buf);
+	    dprint (1, (debugfile, "Mark: %s => %s\n", str, macro));
+	  }
+	}
+	else
+          /* L10N: This error is printed if <mark-message> cannot find a
+             Message-ID for the currently selected message in the index. */
+	  mutt_error _("No message ID to macro.");
 	break;
 
       case OP_RECALL_MESSAGE:

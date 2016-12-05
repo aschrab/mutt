@@ -567,13 +567,13 @@ static void draw_sidebar (int num_rows, int num_cols, int div_width)
     }
     else if (entryidx == HilIndex)
       SETCOLOR(MT_COLOR_HIGHLIGHT);
-    else if ((ColorDefs[MT_COLOR_SB_SPOOLFILE] != 0) &&
-               (mutt_strcmp (b->path, Spoolfile) == 0))
-      SETCOLOR(MT_COLOR_SB_SPOOLFILE);
     else if ((b->msg_unread > 0) || (b->new))
       SETCOLOR(MT_COLOR_NEW);
     else if (b->msg_flagged > 0)
       SETCOLOR(MT_COLOR_FLAGGED);
+    else if ((ColorDefs[MT_COLOR_SB_SPOOLFILE] != 0) &&
+               (mutt_strcmp (b->path, Spoolfile) == 0))
+      SETCOLOR(MT_COLOR_SB_SPOOLFILE);
     else
       SETCOLOR(MT_COLOR_NORMAL);
 
@@ -595,7 +595,10 @@ static void draw_sidebar (int num_rows, int num_cols, int div_width)
 
     /* check whether Maildir is a prefix of the current folder's path */
     short maildir_is_prefix = 0;
-    if ((mutt_strlen (b->path) > maildirlen) && (mutt_strncmp (Maildir, b->path, maildirlen) == 0))
+    if ((mutt_strlen (b->path) > maildirlen) &&
+        (mutt_strncmp (Maildir, b->path, maildirlen) == 0) &&
+        SidebarDelimChars &&
+        strchr (SidebarDelimChars, b->path[maildirlen]))
       maildir_is_prefix = 1;
 
     /* calculate depth of current folder and generate its display name with indented spaces */

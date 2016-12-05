@@ -36,6 +36,7 @@ WHERE char *AliasFmt;
 WHERE char *AssumedCharset;
 WHERE char *AttachSep;
 WHERE char *Attribution;
+WHERE char *AttributionLocale;
 WHERE char *AttachCharset;
 WHERE char *AttachFormat;
 WHERE char *Charset;
@@ -66,7 +67,6 @@ WHERE char *ImapUser INITVAL (NULL);
 #endif
 WHERE char *Inbox;
 WHERE char *Ispell;
-WHERE char *Locale;
 WHERE char *MailcapPath;
 WHERE char *Maildir;
 #if defined(USE_IMAP) || defined(USE_POP)
@@ -78,6 +78,7 @@ WHERE char *HeaderCache;
 WHERE char *HeaderCachePageSize;
 #endif /* HAVE_GDBM || HAVE_DB4 */
 #endif /* USE_HCACHE */
+WHERE char *MarkMacroPrefix;
 WHERE char *MhFlagged;
 WHERE char *MhReplied;
 WHERE char *MhUnseen;

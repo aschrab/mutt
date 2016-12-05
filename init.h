@@ -225,6 +225,7 @@ struct option_t MuttVars[] = {
   ** .dt %D  .dd deleted flag
   ** .dt %d  .dd description
   ** .dt %e  .dd MIME content-transfer-encoding
+  ** .dt %F  .dd filename for content-disposition header
   ** .dt %f  .dd filename
   ** .dt %I  .dd disposition (``I'' for inline, ``A'' for attachment)
   ** .dt %m  .dd major MIME type
@@ -265,6 +266,18 @@ struct option_t MuttVars[] = {
   ** This is the string that will precede a message which has been included
   ** in a reply.  For a full listing of defined \fCprintf(3)\fP-like sequences see
   ** the section on $$index_format.
+  */
+  { "attribution_locale", DT_STR, R_NONE, UL &AttributionLocale, UL "" },
+  /*
+  ** .pp
+  ** The locale used by \fCstrftime(3)\fP to format dates in the
+  ** $attribution string.  Legal values are the strings your system
+  ** accepts for the locale environment variable \fC$$$LC_TIME\fP.
+  ** .pp
+  ** This variable is to allow the attribution date format to be
+  ** customized by recipient or folder using hooks.  By default, Mutt
+  ** will use your locale environment, so there is no need to set
+  ** this except to override that default.
   */
   { "auto_tag",		DT_BOOL, R_NONE, OPTAUTOTAG, 0 },
   /*
@@ -599,8 +612,8 @@ struct option_t MuttVars[] = {
   ** function to process the date, see the man page for the proper syntax.
   ** .pp
   ** Unless the first character in the string is a bang (``!''), the month
-  ** and week day names are expanded according to the locale specified in
-  ** the variable $$locale. If the first character in the string is a
+  ** and week day names are expanded according to the locale.
+  ** If the first character in the string is a
   ** bang, the bang is discarded, and the month and week day names in the
   ** rest of the string are expanded in the \fIC\fP locale (that is in US
   ** English).
@@ -785,6 +798,11 @@ struct option_t MuttVars[] = {
   ** unsigned, even when the actual message is encrypted and/or
   ** signed.
   ** (PGP only)
+  */
+  { "flag_safe", DT_BOOL, R_NONE, OPTFLAGSAFE, 0 },
+  /*
+  ** .pp
+  ** If set, flagged messages cannot be deleted.
   */
   { "folder",		DT_PATH, R_NONE, UL &Maildir, UL "~/Mail" },
   /*
@@ -1395,12 +1413,6 @@ struct option_t MuttVars[] = {
   ** from your spool mailbox to your $$mbox mailbox, or as a result of
   ** a ``$mbox-hook'' command.
   */
-  { "locale",		DT_STR,  R_BOTH, UL &Locale, UL "C" },
-  /*
-  ** .pp
-  ** The locale used by \fCstrftime(3)\fP to format dates. Legal values are
-  ** the strings your system accepts for the locale environment variable \fC$$$LC_TIME\fP.
-  */
   { "mail_check",	DT_NUM,  R_NONE, UL &BuffyTimeout, 5 },
   /*
   ** .pp
@@ -1477,6 +1489,13 @@ struct option_t MuttVars[] = {
   ** messages to the cur directory.  Note that setting this option may
   ** slow down polling for new messages in large folders, since mutt has
   ** to scan all cur messages.
+  */
+  { "mark_macro_prefix",DT_STR, R_NONE, UL &MarkMacroPrefix, UL "'" },
+  /*
+  ** .pp
+  ** Prefix for macros created using mark-message.  A new macro
+  ** automatically generated with \fI<mark-message>a\fP will be composed
+  ** from this prefix and the letter \fIa\fP.
   */
   { "mark_old",		DT_BOOL, R_BOTH, OPTMARKOLD, 1 },
   /*
@@ -2667,7 +2686,10 @@ struct option_t MuttVars[] = {
   ** .pp
   ** Specifies the program and arguments used to deliver mail sent by Mutt.
   ** Mutt expects that the specified program interprets additional
-  ** arguments as recipient addresses.
+  ** arguments as recipient addresses.  Mutt appends all recipients after
+  ** adding a \fC--\fP delimiter (if not already present).  Additional
+  ** flags, such as for $$use_8bitmime, $$use_envelope_from,
+  ** $$dsn_notify, or $$dsn_return will be added before the delimiter.
   */
   { "sendmail_wait",	DT_NUM,  R_NONE, UL &SendmailWait, 0 },
   /*
@@ -3897,6 +3919,11 @@ const struct command_t Commands[] = {
   { "fcc-hook",		mutt_parse_hook,	MUTT_FCCHOOK },
   { "fcc-save-hook",	mutt_parse_hook,	MUTT_FCCHOOK | MUTT_SAVEHOOK },
   { "folder-hook",	mutt_parse_hook,	MUTT_FOLDERHOOK },
+#ifdef USE_COMPRESSED
+  { "open-hook",	mutt_parse_hook,	MUTT_OPENHOOK },
+  { "close-hook",	mutt_parse_hook,	MUTT_CLOSEHOOK },
+  { "append-hook",	mutt_parse_hook,	MUTT_APPENDHOOK },
+#endif
   { "group",		parse_group,		MUTT_GROUP },
   { "ungroup",		parse_group,		MUTT_UNGROUP },
   { "hdr_order",	parse_list,		UL &HeaderOrderList },
@@ -3928,6 +3955,7 @@ const struct command_t Commands[] = {
   { "set",		parse_set,		0 },
 #ifdef USE_SIDEBAR
   { "sidebar_whitelist",parse_list,		UL &SidebarWhitelist },
+  { "unsidebar_whitelist",parse_unlist,		UL &SidebarWhitelist },
 #endif
   { "source",		parse_source,		0 },
   { "spam",		parse_spam_list,	MUTT_SPAM },

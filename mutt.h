@@ -52,6 +52,11 @@
 #include <limits.h>
 #endif
 
+/* PATH_MAX is undefined on the hurd */
+#if !defined(PATH_MAX) && defined(_POSIX_PATH_MAX)
+#define PATH_MAX _POSIX_PATH_MAX
+#endif
+
 #include <pwd.h>
 #include <grp.h>
 
@@ -141,6 +146,11 @@ typedef enum
 #define MUTT_ACCOUNTHOOK (1<<9)
 #define MUTT_REPLYHOOK   (1<<10)
 #define MUTT_SEND2HOOK   (1<<11)
+#ifdef USE_COMPRESSED
+#define MUTT_OPENHOOK    (1<<12)
+#define MUTT_APPENDHOOK  (1<<13)
+#define MUTT_CLOSEHOOK   (1<<14)
+#endif
 
 /* tree characters for linearize_tree and print_enriched_string */
 #define MUTT_TREE_LLCORNER      1
@@ -342,6 +352,7 @@ enum
   OPTENVFROM,
   OPTFASTREPLY,
   OPTFCCCLEAR,
+  OPTFLAGSAFE,
   OPTFOLLOWUPTO,
   OPTFORCENAME,
   OPTFORWDECODE,
@@ -849,6 +860,7 @@ typedef struct pattern_t
   unsigned int stringmatch : 1;
   unsigned int groupmatch : 1;
   unsigned int ign_case : 1;		/* ignore case for local stringmatch searches */
+  unsigned int isalias : 1;
   int min;
   int max;
   struct pattern_t *next;
@@ -898,6 +910,7 @@ struct mx_ops
   int (*open_append) (struct _context *, int flags);
   int (*close) (struct _context *);
   int (*check) (struct _context *ctx, int *index_hint);
+  int (*sync) (struct _context *ctx, int *index_hint);
   int (*open_msg) (struct _context *, struct _message *, int msgno);
   int (*close_msg) (struct _context *, struct _message *);
   int (*commit_msg) (struct _context *, struct _message *);
@@ -945,6 +958,10 @@ typedef struct _context
   unsigned int collapsed : 1;   /* are all threads collapsed? */
   unsigned int closing : 1;	/* mailbox is being closed */
   unsigned int peekonly : 1;	/* just taking a glance, revert atime */
+
+#ifdef USE_COMPRESSED
+  void *compress_info;		/* compressed mbox module private data */
+#endif /* USE_COMPRESSED */
 
   /* driver hooks */
   void *data;			/* driver specific data */

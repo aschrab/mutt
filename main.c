@@ -494,6 +494,12 @@ static void show_version (void)
 	"-USE_SIDEBAR  "
 #endif
 
+#ifdef USE_COMPRESSED
+	"+USE_COMPRESSED  "
+#else
+	"-USE_COMPRESSED  "
+#endif
+
 	);
 
 #ifdef ISPELL
@@ -597,14 +603,13 @@ int main (int argc, char **argv)
     exit(1);
   }
 
+  setlocale (LC_ALL, "");
+
 #ifdef ENABLE_NLS
   /* FIXME what about init.c:1439 ? */
-  setlocale (LC_ALL, "");
   bindtextdomain (PACKAGE, MUTTLOCALEDIR);
   textdomain (PACKAGE);
 #endif
-
-  setlocale (LC_CTYPE, "");
 
   mutt_error = mutt_nocurses_error;
   mutt_message = mutt_nocurses_error;
