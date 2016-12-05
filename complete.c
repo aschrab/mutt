@@ -39,36 +39,52 @@
  */
 int mutt_complete (char *s, size_t slen)
 {
-  char *p;
+  char *p, *q;
   DIR *dirp = NULL;
   struct dirent *de;
   int i ,init=0;
   size_t len;
   char dirpart[_POSIX_PATH_MAX], exp_dirpart[_POSIX_PATH_MAX];
   char filepart[_POSIX_PATH_MAX];
+  mailbox_prefix_t *prefix;
+  char exp_path[LONG_STRING];
+
+  prefix = MailboxPrefixList;
+  while (prefix) {
+    len = strlen(prefix->shortcut);
+    if (!strncmp (s, prefix->shortcut, len)) {
+      p = prefix->prefix;
+      q = exp_path;
+      while (*p) *q++ = *p++;
+      p = s + len;
+      while (*p) *q++ = *p++;
+      *q = 0;
+      strfcpy (s, exp_path, slen);
+      break;
+    }
+    prefix = prefix->next;
+  }
+
 #ifdef USE_IMAP
-  char imap_path[LONG_STRING];
-
   dprint (2, (debugfile, "mutt_complete: completing %s\n", s));
-
   /* we can use '/' as a delimiter, imap_complete rewrites it */
-  if (*s == '=' || *s == '+' || *s == '!')
+  if (!prefix && (*s == '=' || *s == '+' || *s == '!'))
   {
     if (*s == '!')
       p = NONULL (Spoolfile);
     else
       p = NONULL (Maildir);
 
-    mutt_concat_path (imap_path, p, s+1, sizeof (imap_path));
+    mutt_concat_path (exp_path, p, s+1, sizeof (exp_path));
   }
   else
-    strfcpy (imap_path, s, sizeof(imap_path));
+    strfcpy (exp_path, s, sizeof(exp_path));
 
-  if (mx_is_imap (imap_path))
-    return imap_complete (s, slen, imap_path);
+  if (mx_is_imap (exp_path))
+    return imap_complete (s, slen, exp_path);
 #endif
   
-  if (*s == '=' || *s == '+' || *s == '!')
+  if (!prefix && (*s == '=' || *s == '+' || *s == '!'))
   {
     dirpart[0] = *s;
     dirpart[1] = 0;

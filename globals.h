@@ -184,7 +184,7 @@ WHERE RX_LIST *SubscribedLists INITVAL(0);
 WHERE RX_LIST *UnSubscribedLists INITVAL(0);
 WHERE SPAM_LIST *SpamList INITVAL(0);
 WHERE RX_LIST *NoSpamList INITVAL(0);
-
+WHERE mailbox_prefix_t *MailboxPrefixList INITVAL(0);
 
 /* bit vector for boolean variables */
 #ifdef MAIN_C
