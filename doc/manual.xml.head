@@ -5207,6 +5207,7 @@ messages containing a particular header without regard to its value.
 </para>
 
 <para>
+<emphasis role="bold">Whole list</emphasis>.
 Patterns matching lists of addresses (notably c, C, p, P and t) match if
 there is at least one match in the whole list. If you want to make sure
 that all elements of that list match, you need to prefix your pattern
@@ -5220,6 +5221,26 @@ recipients from Germany.
 ^~C \.de$
 </screen>
 </example>
+
+<para>
+<emphasis role="bold">Parent and child match</emphasis>.
+You can tell mutt that the following pattern has to be matched against
+the parent message with &lt; or one of its children with &gt;.
+This example matches all mails which have at least an unread duplicate
+child message:
+</para>
+
+<para>
+
+<example id="ex-child">
+<title>Matching all mails with at least an unread duplicate child
+message</title>
+<screen>
+>(~= ~N)
+</screen>
+</example>
+
+</para>
 
 </sect2>
 
