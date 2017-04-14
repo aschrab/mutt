@@ -1,0 +1,6 @@
+-Iimap
+-DPKGDATADIR="$HOME/share/mutt"
+-DSYSCONFDIR="/etc"
+-DBINDIR="$HOME/bin"
+-DMUTTLOCALEDIR="$HOME/share/locale"
+-DHAVE_CONFIG_H=1
