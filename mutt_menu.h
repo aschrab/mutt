@@ -75,6 +75,10 @@ typedef struct menu_t
 
   int (*tag) (struct menu_t *, int i, int m);
 
+  /* these are used for custom redrawing callbacks */
+  void (*custom_menu_redraw) (struct menu_t *);
+  void *redraw_data;
+
   /* color pair to be used for the requested element 
    * (default function returns ColorDefs[MT_COLOR_NORMAL])
    */
@@ -120,6 +124,12 @@ void mutt_ts_icon (char *);
 
 MUTTMENU *mutt_new_menu (int);
 void mutt_menuDestroy (MUTTMENU **);
+void mutt_push_current_menu (MUTTMENU *);
+void mutt_pop_current_menu (MUTTMENU *);
+void mutt_set_current_menu_redraw (int);
+void mutt_set_current_menu_redraw_full ();
+void mutt_set_menu_redraw_full (int);
+void mutt_current_menu_redraw (void);
 int mutt_menuLoop (MUTTMENU *);
 
 /* used in both the index and pager index to make an entry. */

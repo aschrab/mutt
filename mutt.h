@@ -396,6 +396,9 @@ enum
   OPTSSLFORCETLS,
   OPTSSLVERIFYDATES,
   OPTSSLVERIFYHOST,
+# if defined(USE_SSL_OPENSSL) && defined(HAVE_SSL_PARTIAL_CHAIN)
+  OPTSSLVERIFYPARTIAL,
+# endif /* USE_SSL_OPENSSL */
 #endif /* defined(USE_SSL) */
   OPTIMPLICITAUTOVIEW,
   OPTINCLUDEONLYFIRST,
@@ -520,7 +523,6 @@ enum
   OPTFORCEREFRESH,	/* (pseudo) refresh even during macros */
   OPTLOCALES,		/* (pseudo) set if user has valid locale definition */
   OPTNOCURSES,		/* (pseudo) when sending in batch mode */
-  OPTNEEDREDRAW,	/* (pseudo) to notify caller of a submenu */
   OPTSEARCHREVERSE,	/* (pseudo) used by ci_search_command */
   OPTMSGERR,		/* (pseudo) used by mutt_error/mutt_message */
   OPTSEARCHINVALID,	/* (pseudo) used to invalidate the search pat */
@@ -529,8 +531,6 @@ enum
   OPTNEEDRESORT,	/* (pseudo) used to force a re-sort */
   OPTRESORTINIT,	/* (pseudo) used to force the next resort to be from scratch */
   OPTVIEWATTACH,	/* (pseudo) signals that we are viewing attachments */
-  OPTFORCEREDRAWINDEX,	/* (pseudo) used to force a redraw in the main index */
-  OPTFORCEREDRAWPAGER,	/* (pseudo) used to force a redraw in the pager */
   OPTSORTSUBTHREADS,	/* (pseudo) used when $sort_aux changes */
   OPTNEEDRESCORE,	/* (pseudo) set when the `score' command is used */
   OPTATTACHMSG,		/* (pseudo) used by attach-message */

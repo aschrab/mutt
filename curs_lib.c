@@ -94,7 +94,7 @@ void mutt_need_hard_redraw (void)
 {
   keypad (stdscr, TRUE);
   clearok (stdscr, TRUE);
-  set_option (OPTNEEDREDRAW);
+  mutt_set_current_menu_redraw_full ();
 }
 
 event_t mutt_getch (void)
@@ -162,6 +162,16 @@ int _mutt_get_field (const char *field, char *buf, size_t buflen, int complete, 
   
   do
   {
+    if (SigWinch)
+    {
+      SigWinch = 0;
+      mutt_resize_screen ();
+      /* mutt_resize_screen sets REDRAW_FULL, but the pager also
+       * requires SIGWINCH. */
+      mutt_set_current_menu_redraw (REDRAW_SIGWINCH);
+      clearok(stdscr, TRUE);
+      mutt_current_menu_redraw ();
+    }
     mutt_window_clearline (MuttMessageWindow, 0);
     SETCOLOR (MT_COLOR_PROMPT);
     addstr ((char *)field); /* cast to get around bad prototypes */
@@ -173,7 +183,7 @@ int _mutt_get_field (const char *field, char *buf, size_t buflen, int complete, 
   while (ret == 1);
   mutt_window_clearline (MuttMessageWindow, 0);
   mutt_free_enter_state (&es);
-  
+
   return (ret);
 }
 
@@ -548,6 +558,8 @@ void mutt_reflow_windows (void)
     MuttIndexWindow->col_offset += SidebarWidth;
   }
 #endif
+
+  mutt_set_current_menu_redraw_full ();
 }
 
 int mutt_window_move (mutt_window_t *win, int row, int col)
@@ -733,7 +745,7 @@ int mutt_do_pager (const char *banner,
   return rc;
 }
 
-int _mutt_enter_fname (const char *prompt, char *buf, size_t blen, int *redraw, int buffy, int multiple, char ***files, int *numfiles)
+int _mutt_enter_fname (const char *prompt, char *buf, size_t blen, int buffy, int multiple, char ***files, int *numfiles)
 {
   event_t ch;
 
@@ -758,7 +770,6 @@ int _mutt_enter_fname (const char *prompt, char *buf, size_t blen, int *redraw, 
     buf[0] = 0;
     _mutt_select_file (buf, blen, MUTT_SEL_FOLDER | (multiple ? MUTT_SEL_MULTI : 0), 
 		       files, numfiles);
-    *redraw = REDRAW_FULL;
   }
   else
   {
@@ -769,7 +780,6 @@ int _mutt_enter_fname (const char *prompt, char *buf, size_t blen, int *redraw, 
     if (_mutt_get_field (pc, buf, blen, (buffy ? MUTT_EFILE : MUTT_FILE) | MUTT_CLEAR, multiple, files, numfiles)
 	!= 0)
       buf[0] = 0;
-    MAYBE_REDRAW (*redraw);
     FREE (&pc);
   }
 

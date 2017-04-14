@@ -494,6 +494,59 @@ static const struct mapping_t IndexHelp[] = {
   { NULL,	 0 }
 };
 
+static void index_menu_redraw (MUTTMENU *menu)
+{
+  char buf[LONG_STRING];
+
+  if (menu->redraw & REDRAW_FULL)
+  {
+    menu_redraw_full (menu);
+    mutt_show_error ();
+  }
+
+#ifdef USE_SIDEBAR
+  if (menu->redraw & REDRAW_SIDEBAR)
+  {
+    mutt_sb_set_buffystats (Context);
+    menu_redraw_sidebar (menu);
+  }
+#endif
+
+  if (Context && Context->hdrs && !(menu->current >= Context->vcount))
+  {
+    menu_check_recenter (menu);
+
+    if (menu->redraw & REDRAW_INDEX)
+    {
+      menu_redraw_index (menu);
+      menu->redraw |= REDRAW_STATUS;
+    }
+    else if (menu->redraw & (REDRAW_MOTION_RESYNCH | REDRAW_MOTION))
+      menu_redraw_motion (menu);
+    else if (menu->redraw & REDRAW_CURRENT)
+      menu_redraw_current (menu);
+  }
+
+  if (menu->redraw & REDRAW_STATUS)
+  {
+    menu_status_line (buf, sizeof (buf), menu, NONULL (Status));
+    mutt_window_move (MuttStatusWindow, 0, 0);
+    SETCOLOR (MT_COLOR_STATUS);
+    mutt_paddstr (MuttStatusWindow->cols, buf);
+    NORMAL_COLOR;
+    menu->redraw &= ~REDRAW_STATUS;
+    if (option(OPTTSENABLED) && TSSupported)
+    {
+      menu_status_line (buf, sizeof (buf), menu, NONULL (TSStatusFormat));
+      mutt_ts_status(buf);
+      menu_status_line (buf, sizeof (buf), menu, NONULL (TSIconFormat));
+      mutt_ts_icon(buf);
+    }
+  }
+
+  menu->redraw = 0;
+}
+
 /* This function handles the message index window as well as commands returned
  * from the pager (MENU_PAGER).
  */
@@ -519,6 +572,8 @@ int mutt_index_menu (void)
   menu->color = index_color;
   menu->current = ci_first_message ();
   menu->help = mutt_compile_help (helpstr, sizeof (helpstr), MENU_MAIN, IndexHelp);
+  menu->custom_menu_redraw = index_menu_redraw;
+  mutt_push_current_menu (menu);
 
   if (!attach_msg)
     mutt_buffy_check(1); /* force the buffy check after we enter the folder */
@@ -612,65 +667,21 @@ int mutt_index_menu (void)
     if (op != -1)
       mutt_curs_set (0);
 
-    if (menu->redraw & REDRAW_FULL)
-    {
-      menu_redraw_full (menu);
-      mutt_show_error ();
-    }
-
     if (menu->menu == MENU_MAIN)
     {
-#ifdef USE_SIDEBAR
-      if (menu->redraw & REDRAW_SIDEBAR || SidebarNeedsRedraw)
-      {
-        mutt_sb_set_buffystats (Context);
-        menu_redraw_sidebar (menu);
-      }
-#endif
-      if (Context && Context->hdrs && !(menu->current >= Context->vcount))
-      {
-	menu_check_recenter (menu);
+      index_menu_redraw (menu);
 
-	if (menu->redraw & REDRAW_INDEX)
-	{
-	  menu_redraw_index (menu);
-	  menu->redraw |= REDRAW_STATUS;
-	}
-	else if (menu->redraw & (REDRAW_MOTION_RESYNCH | REDRAW_MOTION))
-	  menu_redraw_motion (menu);
-	else if (menu->redraw & REDRAW_CURRENT)
-	  menu_redraw_current (menu);
-      }
-
-      if (menu->redraw & REDRAW_STATUS)
-      {
-	menu_status_line (buf, sizeof (buf), menu, NONULL (Status));
-        mutt_window_move (MuttStatusWindow, 0, 0);
-	SETCOLOR (MT_COLOR_STATUS);
-	mutt_paddstr (MuttStatusWindow->cols, buf);
-	NORMAL_COLOR;
-	menu->redraw &= ~REDRAW_STATUS;
-	if (option(OPTTSENABLED) && TSSupported)
-	{
-	  menu_status_line (buf, sizeof (buf), menu, NONULL (TSStatusFormat));
-	  mutt_ts_status(buf);
-	  menu_status_line (buf, sizeof (buf), menu, NONULL (TSIconFormat));
-	  mutt_ts_icon(buf);
-	}
-      }
-
-      menu->redraw = 0;
       if (menu->current < menu->max)
-	menu->oldcurrent = menu->current;
+        menu->oldcurrent = menu->current;
       else
-	menu->oldcurrent = -1;
+        menu->oldcurrent = -1;
 
       if (option (OPTARROWCURSOR))
-	mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset, 2);
+        mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset, 2);
       else if (option (OPTBRAILLEFRIENDLY))
-	mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset, 0);
+        mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset, 0);
       else
-	mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset,
+        mutt_window_move (MuttIndexWindow, menu->current - menu->top + menu->offset,
                           MuttIndexWindow->cols - 1);
       mutt_refresh ();
 
@@ -679,8 +690,6 @@ int mutt_index_menu (void)
       {
 	mutt_flushinp ();
 	mutt_resize_screen ();
-	menu->redraw = REDRAW_FULL;
-	menu->menu = MENU_MAIN;
 	SigWinch = 0;
 	menu->top = 0; /* so we scroll the right amount */
 	/*
@@ -1215,7 +1224,7 @@ int mutt_index_menu (void)
 	{
 	  mutt_buffy (buf, sizeof (buf));
 
-          if (mutt_enter_fname (cp, buf, sizeof (buf), &menu->redraw, 1) == -1)
+          if (mutt_enter_fname (cp, buf, sizeof (buf), 1) == -1)
           {
             if (menu->menu == MENU_PAGER)
             {
@@ -1270,12 +1279,14 @@ int mutt_index_menu (void)
 
         mutt_sleep (0);
 
-	/* Set CurrentMenu to MENU_MAIN before executing any folder
-	 * hooks so that all the index menu functions are available to
-	 * the exec command.
-	 */
-
-	CurrentMenu = MENU_MAIN;
+        /* Note that menu->menu may be MENU_PAGER if the change folder
+         * operation originated from the pager.
+         *
+         * However, exec commands currently use CurrentMenu to determine what
+         * functions are available, which is automatically set by the
+         * mutt_push/pop_current_menu() functions.  If that changes, the menu
+         * would need to be reset here, and the pager cleanup code after the
+         * switch statement would need to be run. */
 	mutt_folder_hook (buf);
 
 	if ((Context = mx_open_mailbox (buf,
@@ -1322,12 +1333,21 @@ int mutt_index_menu (void)
 
 	if (option (OPTPGPAUTODEC) && (tag || !(CURHDR->security & PGP_TRADITIONAL_CHECKED)))
 	  mutt_check_traditional_pgp (tag ? NULL : CURHDR, &menu->redraw);
-	if ((op = mutt_display_message (CURHDR)) == -1)
+
+        /* If we are returning to the pager via an index menu redirection, we
+         * need to reset the menu->menu.  Otherwise mutt_pop_current_menu() will
+         * set CurrentMenu incorrectly when we return back to the index menu. */
+        menu->menu = MENU_MAIN;
+
+        if ((op = mutt_display_message (CURHDR)) == -1)
 	{
 	  unset_option (OPTNEEDRESORT);
 	  break;
 	}
 
+        /* This is used to redirect a single operation back here afterwards.  If
+         * mutt_display_message() returns 0, then the menu and pager state will
+         * be cleaned up after this switch statement. */
 	menu->menu = MENU_PAGER;
  	menu->oldcurrent = menu->current;
 	continue;
@@ -1549,11 +1569,11 @@ int mutt_index_menu (void)
 			       (op == OP_SAVE) || (op == OP_DECODE_SAVE),
 			       (op == OP_DECODE_SAVE) || (op == OP_DECODE_COPY),
 			       (op == OP_DECRYPT_SAVE) || (op == OP_DECRYPT_COPY) ||
-			       0,
-			       &menu->redraw) == 0 &&
+			       0) == 0 &&
 	     (op == OP_SAVE || op == OP_DECODE_SAVE || op == OP_DECRYPT_SAVE)
 	    )
 	{
+          menu->redraw |= REDRAW_STATUS;
 	  if (tag)
 	    menu->redraw |= REDRAW_INDEX;
 	  else if (option (OPTRESOLVE))
@@ -1948,20 +1968,18 @@ int mutt_index_menu (void)
 	CHECK_ATTACH;
 	CHECK_MSGCOUNT;
         CHECK_VISIBLE;
-	ci_bounce_message (tag ? NULL : CURHDR, &menu->redraw);
+	ci_bounce_message (tag ? NULL : CURHDR);
 	break;
 
       case OP_CREATE_ALIAS:
 
         mutt_create_alias (Context && Context->vcount ? CURHDR->env : NULL, NULL);
-	MAYBE_REDRAW (menu->redraw);
         menu->redraw |= REDRAW_CURRENT;
 	break;
 
       case OP_QUERY:
 	CHECK_ATTACH;
 	mutt_query_menu (NULL, 0);
-	MAYBE_REDRAW (menu->redraw);
 	break;
 
       case OP_PURGE_MESSAGE:
@@ -2041,13 +2059,8 @@ int mutt_index_menu (void)
 
       case OP_ENTER_COMMAND:
 
-	CurrentMenu = MENU_MAIN;
 	mutt_enter_command ();
 	mutt_check_rescore (Context);
-	if (option (OPTFORCEREDRAWINDEX))
-	  menu->redraw = REDRAW_FULL;
-	unset_option (OPTFORCEREDRAWINDEX);
-	unset_option (OPTFORCEREDRAWPAGER);
 	break;
 
       case OP_EDIT_MESSAGE:
@@ -2181,7 +2194,6 @@ int mutt_index_menu (void)
 	}
 #endif
 
-	MAYBE_REDRAW (menu->redraw);
 	break;
 
       case OP_PRINT:
@@ -2310,7 +2322,6 @@ int mutt_index_menu (void)
       case OP_SHELL_ESCAPE:
 
 	mutt_shell_escape ();
-	MAYBE_REDRAW (menu->redraw);
 	break;
 
       case OP_TAG_THREAD:
@@ -2433,7 +2444,6 @@ int mutt_index_menu (void)
       case OP_SIDEBAR_TOGGLE_VISIBLE:
 	toggle_option (OPTSIDEBAR);
         mutt_reflow_windows();
-	menu->redraw = REDRAW_FULL;
 	break;
 #endif
       default:
@@ -2446,14 +2456,12 @@ int mutt_index_menu (void)
       mutt_clear_pager_position ();
       menu->menu = MENU_MAIN;
       menu->redraw = REDRAW_FULL;
-#if 0
-      set_option (OPTWEED); /* turn header weeding back on. */
-#endif
     }
 
     if (done) break;
   }
 
+  mutt_pop_current_menu (menu);
   mutt_menuDestroy (&menu);
   return (close);
 }

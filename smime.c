@@ -447,6 +447,7 @@ static smime_key_t *smime_select_key (smime_key_t *keys, char *query)
   menu->help = helpstr;
   menu->data = table;
   menu->title = title;
+  mutt_push_current_menu (menu);
   /* sorting keys might be done later - TODO */
 
   mutt_clear_error();
@@ -493,9 +494,9 @@ static smime_key_t *smime_select_key (smime_key_t *keys, char *query)
     }
   }
 
+  mutt_pop_current_menu (menu);
   mutt_menuDestroy (&menu);
   FREE (&table);
-  set_option (OPTNEEDREDRAW);
 
   return selected_key;
 }
@@ -2089,7 +2090,7 @@ int smime_application_smime_handler (BODY *m, STATE *s)
   return smime_handle_entity (m, s, NULL) ? 0 : -1;
 }
 
-int smime_send_menu (HEADER *msg, int *redraw)
+int smime_send_menu (HEADER *msg)
 {
   smime_key_t *key;
   char *prompt, *letters, *choices;
@@ -2217,8 +2218,6 @@ int smime_send_menu (HEADER *msg, int *redraw)
     case 'S': /* (s)ign in oppenc mode */
       if(!SmimeDefaultKey)
       {
-        *redraw = REDRAW_FULL;
-
         if ((key = smime_ask_for_key (_("Sign as: "), KEYFLAG_CANSIGN, 0)))
         {
           mutt_str_replace (&SmimeDefaultKey, key->hash);
@@ -2245,7 +2244,6 @@ int smime_send_menu (HEADER *msg, int *redraw)
         crypt_smime_void_passphrase ();
       }
 
-      *redraw = REDRAW_FULL;
       break;
 
     case 'b': /* (b)oth */
