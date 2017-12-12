@@ -408,6 +408,8 @@ char *_mutt_expand_path (char *s, size_t slen, int rx)
   char q[_POSIX_PATH_MAX] = "";
   char tmp[_POSIX_PATH_MAX];
   char *t;
+  int pfx_len;
+  mailbox_prefix_t *prefix;
 
   char *tail = ""; 
 
@@ -416,6 +418,16 @@ char *_mutt_expand_path (char *s, size_t slen, int rx)
   do 
   {
     recurse = 0;
+    prefix = MailboxPrefixList;
+    while (prefix) {
+      pfx_len = strlen(prefix->shortcut);
+      if (!strncmp(s, prefix->shortcut, pfx_len)) {
+	strfcpy (p, prefix->prefix, sizeof (p));
+	tail = s + pfx_len;
+	goto tail;
+      }
+      prefix = prefix->next;
+    }
 
     switch (*s)
     {
@@ -549,6 +561,7 @@ char *_mutt_expand_path (char *s, size_t slen, int rx)
       }
     }
 
+tail:
     if (rx && *p && !recurse)
     {
       mutt_rx_sanitize_string (q, sizeof (q), p);
@@ -836,7 +849,23 @@ void mutt_pretty_mailbox (char *s, size_t buflen)
   char *p = s, *q = s;
   size_t len;
   url_scheme_t scheme;
+  mailbox_prefix_t *prefix;
   char tmp[PATH_MAX];
+
+  prefix = MailboxPrefixList;
+  while (prefix) {
+    len = strlen (prefix->prefix);
+    if (!strncmp (prefix->prefix, s, len)) {
+      p = prefix->shortcut;
+      while (*p) *q++ = *p++;
+      p = s+len;
+      while (*p) *q++ = *p++;
+      *q = 0;
+      p = q = s;
+      break;
+    }
+    prefix = prefix->next;
+  }
 
   scheme = url_check_scheme (s);
 
