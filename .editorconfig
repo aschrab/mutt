@@ -1,0 +1,14 @@
+# Top-most editorconfig file
+root = true
+
+[*]
+end_of_line = lf
+tab_width   = 8
+indent_size = 2
+
+[*.pl]
+indent_size = 4
+tab_width   = 4
+
+[muttbug.sh*]
+tab_width   = 2
